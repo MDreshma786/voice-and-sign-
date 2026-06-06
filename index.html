@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AccessAI NextGen - Intelligent Accessibility & Inclusion Assistant</title>
+    <meta name="description" content="AccessAI NextGen provides automated hand gesture translations, advanced voice controls, name greetings, emergency alerts, gesture training, and interactive accessibility diagnostics.">
+    <meta name="keywords" content="Accessibility, Sign Language Recognition, Voice Control, Inclusion, Analytics, Gesture Training, MediaPipe Hands, TensorFlow.js">
+    <meta name="author" content="AccessAI Team">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Animate.css for Training animations -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    
+    <!-- Custom Stylesheet -->
+    <link href="css/style.css" rel="stylesheet">
+    
+    <!-- MediaPipe CDN Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    
+    <!-- TensorFlow.js CDN Dependency -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js" crossorigin="anonymous"></script>
+</head>
+<body class="theme-dark" data-font-size="normal">
+    <!-- Skip to Main Content Link for Keyboard Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Accessibility Announcement Bar for screen readers -->
+    <div id="sr-announcer" class="visually-hidden" aria-live="assertive" aria-atomic="true"></div>
+
+    <!-- Navigation Header (Hidden on Welcome Screen) -->
+    <header class="navbar navbar-expand-xl sticky-top custom-navbar" id="app-header" style="display: none;">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="#home" id="brand-logo" aria-label="AccessAI Home">
+                <div class="logo-icon me-2">
+                    <i class="fa-solid fa-universal-access"></i>
+                </div>
+                <span class="brand-text">Access<span class="highlight">AI</span> <span class="badge bg-soft-primary text-xs font-semibold px-2 py-0.5" style="font-size: 0.65rem;">NextGen</span></span>
+            </a>
+            
+            <!-- Mobile Toggle -->
+            <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" 
+                    aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fa-solid fa-bars navbar-toggler-icon-custom"></i>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <nav class="navbar-nav mx-auto" aria-label="Main navigation">
+                    <a class="nav-link active" href="#home" id="nav-home"><i class="fa-solid fa-house me-1"></i> Home</a>
+                    <a class="nav-link" href="#sign-recognition" id="nav-sign-recognition"><i class="fa-solid fa-hands-asl-interpreting me-1"></i> Gestures</a>
+                    <a class="nav-link" href="#gesture-guide" id="nav-gesture-guide"><i class="fa-solid fa-book-open me-1"></i> Guide</a>
+                    <a class="nav-link" href="#gesture-training" id="nav-gesture-training"><i class="fa-solid fa-graduation-cap me-1"></i> Training</a>
+                    <a class="nav-link" href="#voice-assistant" id="nav-voice-assistant"><i class="fa-solid fa-microphone me-1"></i> Voice</a>
+                    <a class="nav-link" href="#accessibility-dashboard" id="nav-accessibility-dashboard"><i class="fa-solid fa-sliders me-1"></i> Accessibility</a>
+                    <a class="nav-link" href="#analytics-dashboard" id="nav-analytics-dashboard"><i class="fa-solid fa-chart-simple me-1"></i> Analytics</a>
+                    <a class="nav-link" href="#about" id="nav-about"><i class="fa-solid fa-circle-info me-1"></i> About</a>
+                    <a class="nav-link" href="#contact" id="nav-contact"><i class="fa-solid fa-envelope me-1"></i> Contact</a>
+                </nav>
+                
+                <!-- Quick Accessibility Actions -->
+                <div class="d-flex align-items-center gap-2 mt-3 mt-xl-0 accessibility-toolbar">
+                    <span class="badge bg-soft-primary px-3 py-2 text-uppercase d-none d-xxl-inline-block border border-custom-light text-sm text-truncate max-w-150" id="user-display-badge">
+                        <i class="fa-solid fa-user me-1 text-primary-custom"></i> Guest
+                    </span>
+                    
+                    <button class="btn btn-outline-custom" id="mic-toggle-btn" title="Toggle Voice Control (Alt + M)" aria-label="Toggle Voice Control">
+                        <i class="fa-solid fa-microphone-slash text-danger" id="mic-btn-icon"></i>
+                        <span class="d-none d-lg-inline ms-1">Voice Control</span>
+                    </button>
+                    
+                    <button class="btn btn-outline-custom" id="voice-guidance-btn" title="Toggle Voice Guidance (Alt + G)" aria-label="Toggle Voice Guidance">
+                        <i class="fa-solid fa-volume-xmark" id="voice-guidance-icon"></i>
+                        <span class="d-none d-lg-inline ms-1">Guide</span>
+                    </button>
+                    
+                    <!-- Accessibility Settings Panel Trigger -->
+                    <button class="btn btn-primary-custom px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#accessibilityPanel" 
+                            aria-controls="accessibilityPanel" aria-label="Accessibility Settings">
+                        <i class="fa-solid fa-cog me-1"></i> Options
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Wrapper -->
+    <main id="main-content" tabindex="-1">
+        
+        <!-- =================== 0. WELCOME / NAME CAPTURE SCREEN =================== -->
+        <section id="section-welcome" class="app-section active-section">
+            <div class="container">
+                <div class="row min-vh-100 align-items-center justify-content-center py-5">
+                    <div class="col-md-9 col-lg-7 col-xl-6 text-center">
+                        <div class="glass-card p-5 border border-custom-light position-relative overflow-hidden">
+                            <div class="card-glow"></div>
+                            
+                            <div class="assistant-circle mx-auto mb-4 bg-soft-primary d-flex align-items-center justify-content-center" style="width: 120px; height: 120px; border-radius: 50%;">
+                                <i class="fa-solid fa-universal-access fa-4x text-primary-custom pulse-logo"></i>
+                            </div>
+                            
+                            <h1 class="display-5 fw-bold mb-2">Welcome to <br><span class="gradient-text">AccessAI NextGen</span></h1>
+                            <p class="text-secondary-custom lead mb-4">Let's personalize your assistance. Please enter your name manually or speak it into your microphone.</p>
+                            
+                            <!-- Name Input Group -->
+                            <div class="name-entry-container bg-custom-dark p-4 rounded-4 border border-custom-light mb-4">
+                                <div class="form-group-custom text-start mb-3">
+                                    <label for="welcome-name-input" class="form-label fw-bold text-sm text-primary-custom">Your Name</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control form-control-lg border-end-0" id="welcome-name-input" placeholder="Enter name or click mic..." aria-label="Enter name manually or speak it">
+                                        <button class="btn btn-outline-custom px-3 border-start-0" type="button" id="welcome-speak-btn" title="Speak your name" aria-label="Speak your name">
+                                            <i class="fa-solid fa-microphone" id="welcome-speak-icon"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted text-xs mt-1 d-block" id="welcome-mic-hint">Click the microphone to fill name via speech.</small>
+                                </div>
+                                
+                                <button class="btn btn-primary-custom btn-lg w-100 py-3" id="welcome-continue-btn">
+                                    Continue to Dashboard <i class="fa-solid fa-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Help Alert -->
+                            <div class="alert alert-info border-0 bg-soft-primary text-start text-xs mb-0 d-flex gap-2.5">
+                                <i class="fa-solid fa-keyboard mt-1 text-primary-custom fa-lg"></i>
+                                <span><strong>Keyboard shortcut:</strong> Press <kbd class="text-primary-custom">Alt + G</kbd> at any point to hear screen narrator guides. Press <kbd class="text-primary-custom">Alt + M</kbd> to toggle microphone.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== 1. HOME SECTION =================== -->
+        <section id="section-home" class="app-section">
+            <div class="hero-container container text-center text-lg-start">
+                <div class="row align-items-center min-vh-75 py-5">
+                    <div class="col-lg-6 mb-5 mb-lg-0">
+                        <div class="badge-pill mb-3 d-inline-block">
+                            <span class="badge bg-soft-primary px-3 py-2 text-uppercase"><i class="fa-solid fa-sparkles me-1 text-primary-custom"></i> Personalized Assistance</span>
+                        </div>
+                        <h1 class="display-4 fw-bold main-title mb-3">
+                            Hi <span class="gradient-text" id="home-username-greet">Guest</span>, <br>Welcome to AccessAI
+                        </h1>
+                        <p class="lead text-secondary-custom mb-4">
+                            We are ready to guide you. AccessAI is equipped with continuous voice navigation, hand-joint camera translations, and a real-time analytics panel.
+                        </p>
+                        
+                        <div class="d-flex flex-wrap justify-content-center justify-content-lg-start gap-3">
+                            <a href="#sign-recognition" class="btn btn-primary-custom btn-lg px-4 py-3">
+                                <i class="fa-solid fa-hands-asl-interpreting me-2"></i> Open Sign Recognition
+                            </a>
+                            <a href="#voice-assistant" class="btn btn-secondary-custom btn-lg px-4 py-3">
+                                <i class="fa-solid fa-microphone me-2"></i> Open Voice Assistant
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="hero-image-wrapper p-3">
+                            <div class="glass-card main-hero-card p-4">
+                                <div class="card-glow"></div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="text-uppercase tracking-wider text-xs font-semibold text-primary-custom"><i class="fa-solid fa-circle-play me-1 pulse-red"></i> TELEMETRY LOG</span>
+                                    <span class="badge bg-success-soft text-success px-2.5 py-1 text-xs"><i class="fa-solid fa-check me-1"></i> Mode: Active</span>
+                                </div>
+                                
+                                <div class="avatar-block text-center py-4">
+                                    <div class="assistant-circle mx-auto mb-3">
+                                        <i class="fa-solid fa-universal-access fa-4x text-primary-custom pulse-logo"></i>
+                                    </div>
+                                    <h2 class="h4 fw-bold" id="home-assistant-bubble">How can I assist you today?</h2>
+                                    <p class="text-muted text-sm px-4">Wave right/left to navigate pages, or press Alt + M to speak commands.</p>
+                                </div>
+                                
+                                <div class="quick-nav-grid row g-3 mt-2">
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-custom w-100 text-start p-3 h-100" onclick="window.location.hash='#accessibility-dashboard'">
+                                            <i class="fa-solid fa-sliders mb-2 text-primary-custom fa-lg d-block"></i>
+                                            <span class="fw-bold text-sm d-block">Accessibility settings</span>
+                                            <span class="text-muted text-xs">Configure guides</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-custom w-100 text-start p-3 h-100" onclick="window.location.hash='#analytics-dashboard'">
+                                            <i class="fa-solid fa-chart-line mb-2 text-accent-custom fa-lg d-block"></i>
+                                            <span class="fw-bold text-sm d-block">Analytics Board</span>
+                                            <span class="text-muted text-xs">Read statistics</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== 2. SIGN LANGUAGE RECOGNITION =================== -->
+        <section id="section-sign-recognition" class="app-section">
+            <div class="container py-5">
+                <div class="row">
+                    <div class="col-12 text-center text-lg-start mb-4">
+                        <h1 class="fw-bold"><i class="fa-solid fa-hands-asl-interpreting text-primary-custom me-2"></i>Sign Language Recognition</h1>
+                        <p class="text-secondary-custom">Interact with custom gestures to control system outputs. Hover your hand in camera frame to test.</p>
+                    </div>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Camera Canvas Stream -->
+                    <div class="col-lg-7">
+                        <div class="card glass-card border border-custom-light p-3 position-relative overflow-hidden">
+                            <div class="camera-stream-wrapper rounded-3 position-relative bg-black d-flex justify-content-center align-items-center" style="aspect-ratio: 16/9;">
+                                <video id="webcam-feed" autoplay playsinline muted style="display:none;"></video>
+                                <canvas id="webcam-canvas" class="w-100 h-100 rounded-3 position-absolute top-0 start-0" style="object-fit: cover;"></canvas>
+                                
+                                <div id="camera-loading" class="position-absolute text-center text-white px-3 py-2 rounded glass-panel">
+                                    <i class="fa-solid fa-circle-notch fa-spin fa-2x mb-2 text-primary-custom"></i>
+                                    <p class="mb-0 text-sm fw-medium">Initializing camera & gesture matrices...</p>
+                                </div>
+                                <div id="camera-error" class="position-absolute text-center text-white px-3 py-2 rounded glass-panel d-none">
+                                    <i class="fa-solid fa-triangle-exclamation fa-2x mb-2 text-danger"></i>
+                                    <p class="mb-0 text-sm fw-medium" id="camera-error-msg">Permission blocked.</p>
+                                    <button class="btn btn-sm btn-danger mt-2" id="retry-camera-btn">Retry Camera</button>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                                <div class="d-flex gap-2">
+                                    <button id="camera-toggle-btn" class="btn btn-primary-custom">
+                                        <i class="fa-solid fa-video me-1"></i> Start Camera
+                                    </button>
+                                    <button id="speak-recognized-btn" class="btn btn-outline-custom" disabled>
+                                        <i class="fa-solid fa-volume-high me-1"></i> Speak Gesture
+                                    </button>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="auto-speak-switch" checked>
+                                    <label class="form-check-label text-sm fw-medium" for="auto-speak-switch">Speak Detected Gestures</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detections Display -->
+                    <div class="col-lg-5">
+                        <div class="d-flex flex-column gap-3 h-100">
+                            <div class="card glass-card border border-custom-light p-4 text-center">
+                                <h2 class="h6 text-muted text-uppercase fw-bold tracking-wider mb-2">Detected Custom Sign</h2>
+                                <div class="detected-gesture-display py-3">
+                                    <span id="detected-gesture-text" class="display-3 fw-bold text-primary-custom">None</span>
+                                    <div class="gesture-confidence text-muted mt-2 d-none" id="gesture-confidence-container">
+                                        <span>Accuracy:</span> <span id="gesture-confidence-val" class="fw-bold">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sentence / History Builder -->
+                            <div class="card glass-card border border-custom-light p-4 flex-grow-1 d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h2 class="h5 fw-bold mb-0">Gesture Logging</h2>
+                                    <button class="btn btn-sm btn-outline-danger" id="clear-history-btn">
+                                        <i class="fa-solid fa-trash-can me-1"></i> Reset Logs
+                                    </button>
+                                </div>
+                                
+                                <div class="history-list-box flex-grow-1 overflow-y-auto mb-3 p-3 bg-custom-dark rounded-3 border border-custom-light min-h-150 max-h-300">
+                                    <div id="gesture-history-empty" class="text-center text-muted py-4">
+                                        <i class="fa-solid fa-history fa-2x mb-2 opacity-50"></i>
+                                        <p class="mb-0 text-sm">Perform gesture triggers to log them here.</p>
+                                    </div>
+                                    <ul id="gesture-history-list" class="list-unstyled mb-0 d-none"></ul>
+                                </div>
+                                
+                                <button class="btn btn-secondary-custom w-100" id="read-history-btn" disabled>
+                                    <i class="fa-solid fa-bullhorn me-1"></i> Speech Synthesize History
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== 2.1 GESTURE REFERENCE GUIDE =================== -->
+        <section id="section-gesture-guide" class="app-section">
+            <div class="container py-5">
+                <div class="row align-items-center mb-4">
+                    <div class="col-lg-8">
+                        <h1 class="fw-bold"><i class="fa-solid fa-book-open text-primary-custom me-2"></i>Gesture Reference Guide</h1>
+                        <p class="text-secondary-custom mb-0">Browse supported gestures or test them in front of the camera stream to see matching references highlight.</p>
+                    </div>
+                    <!-- Search and filters -->
+                    <div class="col-lg-4 mt-3 mt-lg-0">
+                        <div class="input-group">
+                            <span class="input-group-text bg-custom-dark border-custom-light text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="text" class="form-control border-start-0" id="guide-search-input" placeholder="Search gestures (e.g. Help)...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-12 d-flex flex-wrap gap-2 justify-content-center justify-content-lg-start" id="guide-category-filters">
+                        <button class="btn btn-outline-custom active" data-category="all">All Gestures</button>
+                        <button class="btn btn-outline-custom" data-category="navigation">Navigation</button>
+                        <button class="btn btn-outline-custom" data-category="traditional">Traditional</button>
+                        <button class="btn btn-outline-custom" data-category="emergency">Emergency</button>
+                        <button class="btn btn-outline-custom" data-category="shortcut">Shortcuts</button>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Left: Reference camera stream preview -->
+                    <div class="col-xl-4 col-lg-5">
+                        <div class="card glass-card border border-custom-light p-3 position-sticky" style="top: 100px;">
+                            <h2 class="h5 fw-bold mb-3"><i class="fa-solid fa-video text-primary-custom me-1"></i>Live Recognition Check</h2>
+                            <div class="camera-stream-wrapper rounded-3 position-relative bg-black" style="aspect-ratio: 16/9; overflow: hidden;">
+                                <canvas id="guide-webcam-canvas" class="w-100 h-100 rounded-3 position-absolute top-0 start-0" style="object-fit: cover; transform: scaleX(-1);"></canvas>
+                                <div class="position-absolute bottom-0 start-0 w-100 p-2 text-center bg-black bg-opacity-65 text-xs text-white">
+                                    Active Gesture: <span id="guide-active-gesture-txt" class="fw-bold text-primary-custom">None</span>
+                                </div>
+                            </div>
+                            <button id="guide-camera-btn" class="btn btn-primary-custom w-100 mt-3">
+                                <i class="fa-solid fa-video me-1"></i> Toggle Guide Camera
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Gestures Grid -->
+                    <div class="col-xl-8 col-lg-7">
+                        <div class="row g-3" id="gestures-reference-grid">
+                            <!-- Cards generated dynamically or structured in markup with proper categories -->
+                            <!-- We structure them in markup to maintain SEO compliance and accessibility tags -->
+                            
+                            <!-- Hello -->
+                            <div class="col-md-6 guide-card-col" data-category="traditional" data-keywords="hello wave open palm greetings">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-hello">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">🖐️</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Hello</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Hello"</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Raise an open hand vertically with all five fingers spread wide facing the webcam lens.</p>
+                                </div>
+                            </div>
+
+                            <!-- Thank You -->
+                            <div class="col-md-6 guide-card-col" data-category="traditional" data-keywords="thank you gratitude appreciate">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-thankyou">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">🙇‍♂️</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Thank You</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Thank you"</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Show a flat hand open and tilt it forward (pointing fingertips towards the camera lens).</p>
+                                </div>
+                            </div>
+
+                            <!-- Thumbs Up -->
+                            <div class="col-md-6 guide-card-col" data-category="traditional" data-keywords="thumbs up yes confirm accept">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-thumbsup">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">👍</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Confirm / Accept (Yes)</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Confirmed"</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Close fingers into a fist and extend thumb straight up. Translates as Yes or Accept.</p>
+                                </div>
+                            </div>
+
+                            <!-- Thumbs Down -->
+                            <div class="col-md-6 guide-card-col" data-category="traditional" data-keywords="thumbs down no reject cancel">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-thumbsdown">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">👎</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Reject / Cancel (No)</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Cancelled"</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Close fingers into a fist and point thumb straight down. Translates as No or Cancel.</p>
+                                </div>
+                            </div>
+
+                            <!-- Need Assistance -->
+                            <div class="col-md-6 guide-card-col" data-category="navigation" data-keywords="need assistance palm thumb extended help">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-needassistance">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">🖐️</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Need Assistance</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "I need assistance."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Keep fingers index, middle, ring, and pinky tightly together and extend the thumb wide to the side.</p>
+                                </div>
+                            </div>
+
+                            <!-- Call Caretaker -->
+                            <div class="col-md-6 guide-card-col" data-category="emergency" data-keywords="call caretaker three fingers raised nurse">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-callcaretaker">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">☝️</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Call Caretaker</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Please call my caretaker."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Raise the index, middle, and ring fingers vertically; keep thumb and pinky folded in.</p>
+                                </div>
+                            </div>
+
+                            <!-- Emergency Alert -->
+                            <div class="col-md-6 guide-card-col" data-category="emergency" data-keywords="emergency alert closed fist hold siren help">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-emergencyalert">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">✊</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Emergency Alert</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Emergency mode activated."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Hold a closed fist steady in camera view for 2 continuous seconds to activate sirens.</p>
+                                </div>
+                            </div>
+
+                            <!-- Victory Sign -->
+                            <div class="col-md-6 guide-card-col" data-category="navigation" data-keywords="victory sign navigate home peace v">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-navigatehome">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">✌️</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Navigate Home</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Returning to home page."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Raise index and middle fingers in a V shape; keep thumb, ring, and pinky folded. Routes to Home.</p>
+                                </div>
+                            </div>
+
+                            <!-- Wave Left -->
+                            <div class="col-md-6 guide-card-col" data-category="navigation" data-keywords="hand wave left swipe previous screen">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-handwaveleft">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">👋</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Previous Screen</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Going to previous screen."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Sweep your hand rapidly to the left horizontally. Navigates to the previous section.</p>
+                                </div>
+                            </div>
+
+                            <!-- Wave Right -->
+                            <div class="col-md-6 guide-card-col" data-category="navigation" data-keywords="hand wave right swipe next screen">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-handwaveright">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">➡️👋</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Next Screen</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Going to next screen."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Sweep your hand rapidly to the right horizontally. Navigates to the next section.</p>
+                                </div>
+                            </div>
+
+                            <!-- Open Hand Hold -->
+                            <div class="col-md-6 guide-card-col" data-category="shortcut" data-keywords="open hand hold activate voice assistant mic">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-activatevoiceassistant">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">🖐️</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Activate Voice Assistant</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Voice assistant activated."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Hold your open hand steady in position for 2 seconds. Enables microphone speech listener.</p>
+                                </div>
+                            </div>
+
+                            <!-- Both Hands Visible -->
+                            <div class="col-md-6 guide-card-col" data-category="shortcut" data-keywords="both hands visible start accessibility mode size contrast">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-startaccessibilitymode">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">🙌</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Start Accessibility Mode</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Accessibility mode enabled."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Place both hands in front of the camera. Triggers High Contrast and XL text scaling.</p>
+                                </div>
+                            </div>
+
+                            <!-- I Love You Sign -->
+                            <div class="col-md-6 guide-card-col" data-category="shortcut" data-keywords="i love you sign positive message heart ily">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-sendpositivemessage">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">🤟</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Send Positive Message</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Sending positive message."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Extend thumb, index, and pinky fingers; keep middle and ring fingers folded.</p>
+                                </div>
+                            </div>
+
+                            <!-- Crossed Fingers -->
+                            <div class="col-md-6 guide-card-col" data-category="shortcut" data-keywords="crossed fingers save current activity backup lock">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-savecurrentactivity">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">🤞</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Save Current Activity</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Activity saved."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Cross index and middle fingers (tips close together) with thumb, ring, and pinky folded.</p>
+                                </div>
+                            </div>
+
+                            <!-- OK Sign -->
+                            <div class="col-md-6 guide-card-col" data-category="shortcut" data-keywords="ok sign accept settings check approve ok">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-acceptsettings">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">👌</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Accept Settings</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Settings accepted."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Touch the tips of your thumb and index fingers to form a circle, keeping other fingers open.</p>
+                                </div>
+                            </div>
+
+                            <!-- Rock Sign -->
+                            <div class="col-md-6 guide-card-col" data-category="shortcut" data-keywords="rock sign activate smart assistant horns">
+                                <div class="card bg-custom-dark border border-custom-light p-3 h-100 guide-item-card" id="card-ref-activatesmartassistant">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="fs-1">🤘</span>
+                                        <div>
+                                            <h3 class="h6 fw-bold mb-0 text-main">Activate Smart Assistant</h3>
+                                            <span class="text-xs text-primary-custom font-semibold">Voice: "Smart assistant activated."</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary-custom text-xs mt-2.5 mb-0">Extend index and pinky fingers; fold thumb over middle and ring fingers.</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== 2.2 GESTURE TRAINING MODE =================== -->
+        <section id="section-gesture-training" class="app-section">
+            <div class="container py-5">
+                <div class="row align-items-center mb-4">
+                    <div class="col-12 text-center text-lg-start">
+                        <h1 class="fw-bold"><i class="fa-solid fa-graduation-cap text-primary-custom me-2"></i>Gesture Training Center</h1>
+                        <p class="text-secondary-custom">Practice performing gestures one by one. Follow audio cues and hold gestures to score points.</p>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Left: Camera Practice Frame -->
+                    <div class="col-lg-6">
+                        <div class="card glass-card border border-custom-light p-3 text-center">
+                            <h2 class="h5 fw-bold mb-3 text-start"><i class="fa-solid fa-eye me-1"></i>Webcam Training Scanner</h2>
+                            <div class="camera-stream-wrapper rounded-3 position-relative bg-black" style="aspect-ratio: 16/9; overflow: hidden;">
+                                <canvas id="training-webcam-canvas" class="w-100 h-100 rounded-3 position-absolute top-0 start-0" style="object-fit: cover; transform: scaleX(-1);"></canvas>
+                                
+                                <div id="training-hold-overlay" class="position-absolute top-50 start-50 translate-middle text-center p-3 rounded glass-panel d-none" style="min-width: 140px;">
+                                    <span class="d-block text-xs text-muted mb-1">HOLD GESTURE</span>
+                                    <div class="progress" style="height: 12px; background: rgba(255,255,255,0.15);">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%" id="training-hold-progress"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex gap-2 mt-3">
+                                <button id="training-start-btn" class="btn btn-primary-custom flex-grow-1 py-2.5">
+                                    <i class="fa-solid fa-play me-1"></i> Start Practice Session
+                                </button>
+                                <button id="training-stop-btn" class="btn btn-danger w-35 py-2.5" disabled>
+                                    <i class="fa-solid fa-stop me-1"></i> Stop
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Training Directions & Scoring -->
+                    <div class="col-lg-6">
+                        <div class="card glass-card border border-custom-light p-4 h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-custom-light pb-2">
+                                    <h2 class="h5 fw-bold mb-0">Target Practice</h2>
+                                    <span class="badge bg-soft-primary px-3 py-1.5 fw-bold" id="training-score-badge">Score: 0 / 5</span>
+                                </div>
+
+                                <!-- Current Target Display -->
+                                <div class="training-card bg-custom-dark border border-custom-light rounded-3 p-4 text-center my-3" id="training-target-box">
+                                    <div id="training-idle-state" class="py-4">
+                                        <i class="fa-solid fa-graduation-cap fa-3x text-muted mb-3 opacity-50"></i>
+                                        <h3 class="h5 fw-bold mb-1">Click Start to Begin Practice</h3>
+                                        <p class="text-secondary-custom text-xs mb-0">We will randomly prompt you with 5 custom gestures. Hold each gesture for 1.5 seconds to succeed.</p>
+                                    </div>
+                                    
+                                    <div id="training-active-state" class="d-none">
+                                        <span class="fs-1 animate__animated animate__pulse animate__infinite d-inline-block mb-2" id="training-target-emoji">👍</span>
+                                        <h3 class="h4 fw-bold text-primary-custom mb-1" id="training-target-name">Confirm / Accept</h3>
+                                        <p class="text-muted text-xs mb-3" id="training-target-desc">Close fingers into a fist and extend thumb straight up.</p>
+                                        <div class="badge bg-soft-accent px-3 py-1 text-xs" id="training-feedback-txt">Detected: None</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-outline-custom w-100" id="training-reset-btn">
+                                <i class="fa-solid fa-rotate-left me-1"></i> Reset Training History
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== 3. VOICE ASSISTANT PAGE =================== -->
+        <section id="section-voice-assistant" class="app-section">
+            <div class="container py-5">
+                <div class="row align-items-center min-vh-70">
+                    <div class="col-lg-6 mb-5 mb-lg-0 text-center text-lg-start">
+                        <h1 class="fw-bold mb-3"><i class="fa-solid fa-microphone text-accent-custom me-2"></i>Advanced Speech Controller</h1>
+                        <p class="lead text-secondary-custom mb-4">
+                            AccessAI translates voice commands into real-time visual overrides and queries. Talk into the microphone to trigger settings changes.
+                        </p>
+                        
+                        <div class="d-flex flex-column align-items-center align-items-lg-start gap-4">
+                            <!-- Large Pulsing Microphone Button -->
+                            <div class="d-flex align-items-center gap-3">
+                                <button id="voice-assistant-mic-btn" class="voice-huge-btn" aria-label="Toggle Speech Assistant">
+                                    <div class="voice-huge-bg"></div>
+                                    <i class="fa-solid fa-microphone text-white fa-2x" id="voice-assistant-icon"></i>
+                                </button>
+                                <div class="text-start">
+                                    <h2 class="h5 fw-bold mb-1" id="voice-status-title">Voice Control is OFF</h2>
+                                    <span class="badge bg-danger text-white px-2.5 py-1 text-xs" id="voice-status-badge">Disconnected</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Visualizer Wavebars -->
+                            <div class="mic-wave-container d-flex gap-1.5 align-items-end h-35 mt-2" id="speech-waveforms">
+                                <div class="wavebar w-4 rounded-pill bg-accent-custom" style="height: 10%;"></div>
+                                <div class="wavebar w-4 rounded-pill bg-accent-custom" style="height: 10%;"></div>
+                                <div class="wavebar w-4 rounded-pill bg-accent-custom" style="height: 10%;"></div>
+                                <div class="wavebar w-4 rounded-pill bg-accent-custom" style="height: 10%;"></div>
+                                <div class="wavebar w-4 rounded-pill bg-accent-custom" style="height: 10%;"></div>
+                                <div class="wavebar w-4 rounded-pill bg-accent-custom" style="height: 10%;"></div>
+                                <div class="wavebar w-4 rounded-pill bg-accent-custom" style="height: 10%;"></div>
+                                <div class="wavebar w-4 rounded-pill bg-accent-custom" style="height: 10%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="card glass-card border border-custom-light p-4 h-100">
+                            <h2 class="h4 fw-bold mb-3"><i class="fa-solid fa-list me-2 text-accent-custom"></i>Speech Commands Manual</h2>
+                            
+                            <div class="accordion accordion-dark" id="commandsAccordion">
+                                <div class="accordion-item bg-custom-dark border-custom-light">
+                                    <h3 class="accordion-header">
+                                        <button class="accordion-button bg-custom-dark text-main" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBasic" aria-expanded="true" aria-controls="collapseBasic">
+                                            Basic Navigations
+                                        </button>
+                                    </h3>
+                                    <div id="collapseBasic" class="accordion-collapse collapse show" data-bs-parent="#commandsAccordion">
+                                        <div class="accordion-body text-secondary-custom text-sm">
+                                            <ul>
+                                                <li><strong>"Open Home"</strong> - Routes to home.</li>
+                                                <li><strong>"Open Sign Recognition"</strong> - Load camera panel.</li>
+                                                <li><strong>"Open Gesture Reference Guide"</strong> - Browse symbols page.</li>
+                                                <li><strong>"Start Gesture Training Mode"</strong> - Open practice module.</li>
+                                                <li><strong>"Open Voice Assistant"</strong> - Load this portal.</li>
+                                                <li><strong>"Open Accessibility Dashboard"</strong> - Load settings page.</li>
+                                                <li><strong>"Read Screen"</strong> / <strong>"Help"</strong> - Voice assistance checks.</li>
+                                                <li><strong>"Stop Listening"</strong> - Toggle microphone off.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item bg-custom-dark border-custom-light">
+                                    <h3 class="accordion-header">
+                                        <button class="accordion-button collapsed bg-custom-dark text-main" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdvanced" aria-expanded="false" aria-controls="collapseAdvanced">
+                                            Intelligent Commands
+                                        </button>
+                                    </h3>
+                                    <div id="collapseAdvanced" class="accordion-collapse collapse" data-bs-parent="#commandsAccordion">
+                                        <div class="accordion-body text-secondary-custom text-sm">
+                                            <ul>
+                                                <li><strong>"What is my name?"</strong> / <strong>"Who am I?"</strong> - Recalls username.</li>
+                                                <li><strong>"Repeat my last command"</strong> - Speaks previous phrase.</li>
+                                                <li><strong>"What is today's date? / current time?"</strong> - Calendar checks.</li>
+                                                <li><strong>"Tell me today's schedule"</strong> - Speaks customized hourly agenda.</li>
+                                                <li><strong>"Read latest notifications"</strong> - Narrates simulation status alert count.</li>
+                                                <li><strong>"Increase text size" / "Decrease text size"</strong> - Alters font scales.</li>
+                                                <li><strong>"Enable accessibility mode" / "Disable"</strong> - Access controls.</li>
+                                                <li><strong>"Emergency Help" / "Call for Assistance"</strong> - Instantly starts Emergency Alert.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Transcription Log Box -->
+                            <h2 class="h5 fw-bold mb-2 mt-4">Live Transcription History</h2>
+                            <div class="transcription-log bg-custom-dark p-3 rounded-3 border border-custom-light min-h-120 max-h-180 overflow-y-auto">
+                                <ul id="voice-log-list" class="list-unstyled mb-0 text-sm">
+                                    <li class="text-muted"><i class="fa-solid fa-circle-info me-1"></i> Voice logger active. Say a command...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== 4. ACCESSIBILITY DASHBOARD =================== -->
+        <section id="section-accessibility-dashboard" class="app-section">
+            <div class="container py-5">
+                <div class="row mb-4">
+                    <div class="col-12 text-center text-lg-start">
+                        <h1 class="fw-bold"><i class="fa-solid fa-sliders text-primary-custom me-2"></i>Accessibility Control Dashboard</h1>
+                        <p class="text-secondary-custom">Configure system layouts, scaling, and contrast themes dynamically.</p>
+                    </div>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Left: Control Toggles -->
+                    <div class="col-lg-6">
+                        <div class="card glass-card border border-custom-light p-4 h-100">
+                            <h2 class="h4 fw-bold mb-4 border-bottom border-custom-light pb-2">Layout Customizations</h2>
+                            
+                            <!-- Font Sizing Settings -->
+                            <div class="mb-4">
+                                <h3 class="h6 fw-bold mb-2 text-uppercase tracking-wider text-muted text-xs">Text Sizing Scale</h3>
+                                <div class="btn-group w-100" role="group" aria-label="Adjust font size">
+                                    <button type="button" class="btn btn-outline-custom" id="dash-font-normal">Normal</button>
+                                    <button type="button" class="btn btn-outline-custom" id="dash-font-large">Large</button>
+                                    <button type="button" class="btn btn-outline-custom" id="dash-font-xl">Extra Large</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Color Theme Selection -->
+                            <div class="mb-4">
+                                <h3 class="h6 fw-bold mb-2 text-uppercase tracking-wider text-muted text-xs">Contrast Color Theme</h3>
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <button class="btn btn-outline-custom w-100 text-sm" id="dash-theme-dark"><i class="fa-solid fa-moon me-1"></i> Dark</button>
+                                    </div>
+                                    <div class="col-4">
+                                        <button class="btn btn-outline-custom w-100 text-sm" id="dash-theme-light"><i class="fa-solid fa-sun me-1"></i> Light</button>
+                                    </div>
+                                    <div class="col-4">
+                                        <button class="btn btn-outline-custom w-100 text-sm" id="dash-theme-contrast"><i class="fa-solid fa-adjust me-1"></i> Contrast</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Toggles List -->
+                            <div class="mb-4 border-top border-custom-light pt-3">
+                                <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center mb-3">
+                                    <label class="form-check-label text-sm fw-medium" for="dash-dyslexia-switch">Enable Dyslexia Font Spacing</label>
+                                    <input class="form-check-input ms-0" type="checkbox" role="switch" id="dash-dyslexia-switch">
+                                </div>
+                                <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center mb-3">
+                                    <label class="form-check-label text-sm fw-medium" for="dash-guide-switch">Enable Voice Screen Guidance (Narrator)</label>
+                                    <input class="form-check-input ms-0" type="checkbox" role="switch" id="dash-guide-switch">
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-primary-custom w-100 py-2.5" id="dash-btn-smart-access">
+                                <i class="fa-solid fa-magic me-1"></i> Activate Smart Accessibility Suite
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Speech Synthesis Adjusters -->
+                    <div class="col-lg-6">
+                        <div class="card glass-card border border-custom-light p-4 h-100">
+                            <h2 class="h4 fw-bold mb-4 border-bottom border-custom-light pb-2">Synthesizer (TTS) Options</h2>
+                            
+                            <div class="form-group-custom mb-3">
+                                <label for="speech-voice-select" class="form-label fw-bold text-sm">Select Assistant Voice</label>
+                                <select class="form-select" id="speech-voice-select" aria-label="Select voice configuration"></select>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="speech-rate-range" class="form-label fw-bold text-sm d-flex justify-content-between">
+                                    <span>Speaking Rate (Speed)</span>
+                                    <span id="rate-display-val" class="text-primary-custom fw-bold">1.0x</span>
+                                </label>
+                                <input type="range" class="form-range" min="0.5" max="2" step="0.1" id="speech-rate-range" value="1">
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="speech-pitch-range" class="form-label fw-bold text-sm d-flex justify-content-between">
+                                    <span>Vocal Pitch</span>
+                                    <span id="pitch-display-val" class="text-primary-custom fw-bold">1.0</span>
+                                </label>
+                                <input type="range" class="form-range" min="0.5" max="1.5" step="0.1" id="speech-pitch-range" value="1">
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-custom flex-grow-1" id="btn-test-speech">
+                                    <i class="fa-solid fa-volume-high me-1"></i> Test Voice
+                                </button>
+                                <button class="btn btn-danger w-35" id="dash-btn-emergency">
+                                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Test Alert
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== 5. ANALYTICS DASHBOARD =================== -->
+        <section id="section-analytics-dashboard" class="app-section">
+            <div class="container py-5">
+                <div class="row mb-4">
+                    <div class="col-12 text-center text-lg-start">
+                        <h1 class="fw-bold"><i class="fa-solid fa-chart-bar text-primary-custom me-2"></i>Accessibility Analytics Dashboard</h1>
+                        <p class="text-secondary-custom">Live diagnostic logs and metrics tracking system interactions.</p>
+                    </div>
+                </div>
+                
+                <div class="row g-4 mb-4">
+                    <!-- Metric Cards -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card glass-card border border-custom-light p-3 text-center h-100">
+                            <span class="text-uppercase text-xs text-muted fw-bold mb-2">User Profile</span>
+                            <h2 class="h4 fw-bold text-primary-custom text-truncate" id="analytics-username">Guest</h2>
+                            <span class="text-muted text-xs mt-1" id="analytics-session-date">Date: 2026-06-06</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card glass-card border border-custom-light p-3 text-center h-100">
+                            <span class="text-uppercase text-xs text-muted fw-bold mb-2">Gestures Detected</span>
+                            <h2 class="display-6 fw-bold text-accent-custom" id="analytics-gesture-count">0</h2>
+                            <span class="text-muted text-xs mt-1">Total inputs processed</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card glass-card border border-custom-light p-3 text-center h-100">
+                            <span class="text-uppercase text-xs text-muted fw-bold mb-2">Voice Commands</span>
+                            <h2 class="display-6 fw-bold text-success" id="analytics-voice-count">0</h2>
+                            <span class="text-muted text-xs mt-1">Total voice actions executed</span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card glass-card border border-custom-light p-3 text-center h-100">
+                            <span class="text-uppercase text-xs text-muted fw-bold mb-2">Session Timer</span>
+                            <h2 class="display-6 fw-bold text-warning" id="analytics-duration-val">00:00</h2>
+                            <span class="text-muted text-xs mt-1">Elapsed session clock</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NextGen v2 Frequency analytics cards -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card glass-card border border-custom-light p-3 h-100 d-flex flex-row align-items-center gap-3">
+                            <div class="p-3 rounded-circle bg-soft-primary text-primary-custom"><i class="fa-solid fa-hands-asl-interpreting fa-2x"></i></div>
+                            <div>
+                                <span class="text-uppercase text-xs text-muted fw-bold d-block">Most Frequent Gesture</span>
+                                <span class="h5 fw-bold text-main" id="analytics-freq-gesture">None</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card glass-card border border-custom-light p-3 h-100 d-flex flex-row align-items-center gap-3">
+                            <div class="p-3 rounded-circle bg-soft-accent text-accent-custom"><i class="fa-solid fa-microphone fa-2x"></i></div>
+                            <div>
+                                <span class="text-uppercase text-xs text-muted fw-bold d-block">Most Frequent Voice Command</span>
+                                <span class="h5 fw-bold text-main" id="analytics-freq-voice">None</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Metrics Detail List -->
+                    <div class="col-md-6">
+                        <div class="card glass-card border border-custom-light p-4 h-100">
+                            <h2 class="h5 fw-bold mb-3 border-bottom border-custom-light pb-2">Usage Summary</h2>
+                            <ul class="list-group list-group-flush bg-transparent">
+                                <li class="list-group-item bg-transparent text-body-custom border-custom-light px-0 d-flex justify-content-between align-items-center">
+                                    <span>Smart Accessibility Activations:</span>
+                                    <span class="badge bg-soft-primary fw-bold" id="analytics-suite-toggles">0</span>
+                                </li>
+                                <li class="list-group-item bg-transparent text-body-custom border-custom-light px-0 d-flex justify-content-between align-items-center">
+                                    <span>Emergency Mode Triggered:</span>
+                                    <span class="badge bg-soft-primary fw-bold" id="analytics-emergency-triggers">0</span>
+                                </li>
+                                <li class="list-group-item bg-transparent text-body-custom border-custom-light px-0 d-flex justify-content-between align-items-center">
+                                    <span>Webcam Hand Presence Frames:</span>
+                                    <span class="badge bg-soft-primary fw-bold" id="analytics-hand-frames">0</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Alert Timestamps Log -->
+                    <div class="col-md-6">
+                        <div class="card glass-card border border-custom-light p-4 h-100">
+                            <h2 class="h5 fw-bold mb-3 border-bottom border-custom-light pb-2">Emergency Activity Log</h2>
+                            <div class="log-container bg-custom-dark p-3 rounded border border-custom-light min-h-120 overflow-y-auto" style="max-height: 200px;">
+                                <ul id="analytics-emergency-log-list" class="list-unstyled mb-0 text-sm">
+                                    <li class="text-muted text-center py-3">No emergency alerts registered.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== 6. ABOUT PROJECT =================== -->
+        <section id="section-about" class="app-section">
+            <div class="container py-5">
+                <div class="row align-items-center min-vh-70">
+                    <div class="col-lg-6 mb-5 mb-lg-0">
+                        <div class="badge-pill mb-3 d-inline-block">
+                            <span class="badge bg-soft-primary px-3 py-2 text-uppercase">Project Overview</span>
+                        </div>
+                        <h1 class="fw-bold mb-4">Empowering Everyone <br>With <span class="gradient-text">Accessible AI</span></h1>
+                        <p class="text-secondary-custom mb-3">
+                            AccessAI NextGen is built with a singular vision: to make the web accessible to everyone, regardless of physical or sensory limitations.
+                        </p>
+                        <p class="text-secondary-custom mb-4">
+                            By combining high-speed browser-based AI systems (MediaPipe & TensorFlow.js) with standard speech interface components, we provide an interactive hands-free web environment that removes traditional accessibility boundaries.
+                        </p>
+                        
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fa-solid fa-shield-halved text-primary-custom fa-lg"></i>
+                                    <span class="fw-semibold text-sm">100% Local Privacy</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fa-solid fa-bolt text-accent-custom fa-lg"></i>
+                                    <span class="fw-semibold text-sm">Zero Latency Tracking</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fa-solid fa-code text-success fa-lg"></i>
+                                    <span class="fw-semibold text-sm">Modern Standards-Based</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fa-solid fa-circle-user text-warning fa-lg"></i>
+                                    <span class="fw-semibold text-sm">User Centered UI</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="card glass-card border border-custom-light p-4">
+                            <h2 class="h4 fw-bold mb-4">Technical Stack Architecture</h2>
+                            
+                            <div class="stack-item d-flex gap-3 mb-4">
+                                <div class="stack-number bg-soft-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 45px; height: 45px; flex-shrink: 0;">1</div>
+                                <div>
+                                    <h3 class="h5 fw-bold mb-1">MediaPipe Hands</h3>
+                                    <p class="text-secondary-custom text-sm mb-0">Processes standard camera input frames instantly to locate 21 key points, enabling precision-grade hand skeleton modeling without latency.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="stack-item d-flex gap-3 mb-4">
+                                <div class="stack-number bg-soft-accent rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 45px; height: 45px; flex-shrink: 0;">2</div>
+                                <div>
+                                    <h3 class="h5 fw-bold mb-1">TensorFlow.js & Custom Heuristics</h3>
+                                    <p class="text-secondary-custom text-sm mb-0">Computes comparative angles, Euclidean joint separations, and vector distributions inside an offline classification pipeline for error-free sign decoding.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="stack-item d-flex gap-3">
+                                <div class="stack-number bg-soft-success rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 45px; height: 45px; flex-shrink: 0;">3</div>
+                                <div>
+                                    <h3 class="h5 fw-bold mb-1">Speech Recognition & Synthesis</h3>
+                                    <p class="text-secondary-custom text-sm mb-0">Operates continuously in the background to handle user routing instructions and screen reading announcements seamlessly.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== 7. CONTACT / FEEDBACK =================== -->
+        <section id="section-contact" class="app-section">
+            <div class="container py-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8 col-xl-7">
+                        <div class="card glass-card border border-custom-light p-4 p-md-5">
+                            <div class="text-center mb-4">
+                                <h1 class="fw-bold">Accessibility Feedback</h1>
+                                <p class="text-secondary-custom">Help us improve. Provide details below about any feature additions or usability suggestions.</p>
+                            </div>
+                            
+                            <form id="contact-feedback-form" novalidate>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group-custom">
+                                            <label for="feedback-name" class="form-label fw-semibold text-sm">Full Name</label>
+                                            <input type="text" class="form-control" id="feedback-name" placeholder="John Doe" required>
+                                            <div class="invalid-feedback text-xs mt-1">Please enter your name.</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group-custom">
+                                            <label for="feedback-email" class="form-label fw-semibold text-sm">Email Address</label>
+                                            <input type="email" class="form-control" id="feedback-email" placeholder="john@example.com" required>
+                                            <div class="invalid-feedback text-xs mt-1">Please provide a valid email.</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-group-custom">
+                                            <label for="feedback-subject" class="form-label fw-semibold text-sm">Category</label>
+                                            <select class="form-select" id="feedback-subject" required>
+                                                <option value="" disabled selected>Select feedback topic...</option>
+                                                <option value="gestures">Sign Recognition Improvement</option>
+                                                <option value="voice">Voice Control Feedback</option>
+                                                <option value="ui">Layout & Color Adjustments</option>
+                                                <option value="other">General Inquiries / Ideas</option>
+                                            </select>
+                                            <div class="invalid-feedback text-xs mt-1">Please select a category.</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-group-custom">
+                                            <label for="feedback-message" class="form-label fw-semibold text-sm">Message Content</label>
+                                            <textarea class="form-control" id="feedback-message" rows="4" placeholder="Detail your thoughts here..." required></textarea>
+                                            <div class="invalid-feedback text-xs mt-1">Message content cannot be blank.</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-12 text-center mt-4">
+                                        <button type="submit" class="btn btn-primary-custom px-4 py-2.5 w-100" id="btn-submit-feedback">
+                                            <i class="fa-solid fa-paper-plane me-1"></i> Send Feedback Message
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                            
+                            <!-- Form Success Alert -->
+                            <div id="form-success-alert" class="alert alert-success mt-3 d-none text-center" role="alert">
+                                <i class="fa-solid fa-circle-check me-2"></i> Thank you! Your feedback has been simulated successfully.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Offcanvas Accessibility Settings Drawer Panel -->
+    <div class="offcanvas offcanvas-end accessibility-drawer border-start border-custom-light text-body-custom" 
+         tabindex="-1" id="accessibilityPanel" aria-labelledby="accessibilityPanelLabel">
+        <div class="offcanvas-header border-bottom border-custom-light">
+            <h2 class="offcanvas-title h5 fw-bold" id="accessibilityPanelLabel">
+                <i class="fa-solid fa-sliders text-primary-custom me-2"></i>Settings
+            </h2>
+            <button type="button" class="btn-close-custom" data-bs-dismiss="offcanvas" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div class="offcanvas-body">
+            <p class="text-secondary-custom text-sm mb-4">Quick modifications panel.</p>
+            
+            <div class="settings-group mb-4">
+                <h3 class="h6 fw-bold mb-3 text-uppercase tracking-wider text-muted text-xs">Color Theme Mode</h3>
+                <div class="d-flex flex-column gap-2">
+                    <button class="btn btn-outline-custom text-start active" id="theme-dark-btn">
+                        <i class="fa-solid fa-moon text-primary-custom me-2"></i> Modern Dark Mode
+                    </button>
+                    <button class="btn btn-outline-custom text-start" id="theme-light-btn">
+                        <i class="fa-solid fa-sun text-warning me-2"></i> Sleek Light Mode
+                    </button>
+                    <button class="btn btn-outline-custom text-start" id="theme-contrast-btn">
+                        <i class="fa-solid fa-circle-half-stroke text-success me-2"></i> High Contrast Mode
+                    </button>
+                </div>
+            </div>
+            
+            <div class="settings-group mb-4">
+                <h3 class="h6 fw-bold mb-3 text-uppercase tracking-wider text-muted text-xs">Text Sizing</h3>
+                <div class="btn-group w-100" role="group" aria-label="Adjust font size">
+                    <button type="button" class="btn btn-outline-custom active" id="font-sz-normal">Normal</button>
+                    <button type="button" class="btn btn-outline-custom" id="font-sz-large">Large</button>
+                    <button type="button" class="btn btn-outline-custom" id="font-sz-xl">Extra Large</button>
+                </div>
+            </div>
+            
+            <div class="settings-group mb-4">
+                <h3 class="h6 fw-bold mb-3 text-uppercase tracking-wider text-muted text-xs">Dyslexia Spacing</h3>
+                <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center">
+                    <label class="form-check-label text-sm fw-medium" for="dyslexia-switch">Enable Dyslexia Spacing</label>
+                    <input class="form-check-input ms-0" type="checkbox" role="switch" id="dyslexia-switch">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Flashing Full Screen Overlay -->
+    <div id="emergency-overlay" class="emergency-overlay-container d-none text-white d-flex align-items-center justify-content-center p-3">
+        <div class="emergency-box text-center p-5 rounded-4 max-w-600 glass-panel border border-danger">
+            <div class="emergency-siren-icon mb-4 text-danger animate-pulse">
+                <i class="fa-solid fa-bell fa-5x"></i>
+            </div>
+            
+            <h1 class="display-6 fw-bold mb-2 text-uppercase tracking-wider text-danger animate-pulse">Emergency Alert Mode</h1>
+            <p class="lead mb-4 text-white">An emergency trigger has been registered. The caretakers are being notified of your location. Help is on the way.</p>
+            
+            <!-- Contact Details Grid -->
+            <div class="bg-black bg-opacity-40 p-4 rounded-3 mb-4 text-start border border-custom-light">
+                <h2 class="h6 fw-bold text-uppercase text-danger mb-3"><i class="fa-solid fa-address-book me-1"></i>Care Contacts Configured</h2>
+                <div class="d-flex flex-column gap-2 text-sm">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Primary Caretaker:</span>
+                        <span class="fw-bold">Dr. Joseph (+1 555-0199)</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-top border-custom-light pt-2">
+                        <span class="text-muted">Emergency Dispatch:</span>
+                        <span class="fw-bold">Medical Center (Direct Response)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex flex-column gap-2.5">
+                <button class="btn btn-danger btn-lg w-100 py-3" id="emergency-call-caretaker-btn">
+                    <i class="fa-solid fa-phone me-1"></i> Call Caretaker
+                </button>
+                <button class="btn btn-outline-light py-2.5" id="emergency-close-btn">
+                    Deactivate Alert (Normal Mode)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky footer -->
+    <footer class="app-footer border-top border-custom-light py-4 text-center">
+        <div class="container">
+            <p class="mb-1 text-sm text-secondary-custom">© 2026 AccessAI NextGen. Dedicated to inclusive engineering.</p>
+            <p class="mb-0 text-xs text-muted">Voice System: <span id="footer-status-voice" class="text-danger">Offline</span> | Hand Camera: <span id="footer-status-cam" class="text-danger">Offline</span></p>
+        </div>
+    </footer>
+
+    <!-- Custom Logic Javascript Files -->
+    <script src="js/gestures.js"></script>
+    <script src="js/voice.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
